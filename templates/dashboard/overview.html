@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="headline">
+  <div>
+    <p class="eyebrow">OPERATIONS CONTROL</p>
+    <h1>SRAI publication health</h1>
+    <p class="muted">{{ snapshot.reconciliation.scope|default:"Authoritative ecosystem and production-unit registries" }}</p>
+  </div>
+  <a class="refresh" href="{% url 'dashboard:overview' %}">Refresh registries</a>
+</section>
+
+{% if snapshot.errors %}
+<div class="alert">
+  <b>Registry attention required</b>
+  {% for error in snapshot.errors %}<p>{{ error }}</p>{% endfor %}
+</div>
+{% endif %}
+
+<section class="metrics">
+  <article>
+    <span>PRODUCTION UNITS</span>
+    <strong>{{ snapshot.units|length }}</strong>
+    <small>Books 1–9</small>
+  </article>
+  <article class="good">
+    <span>GREEN</span>
+    <strong>{{ counts.green|default:0 }}</strong>
+    <small>closed and verified</small>
+  </article>
+  <article class="warn">
+    <span>AMBER</span>
+    <strong>{{ counts.amber|default:0 }}</strong>
+    <small>follow-up or review</small>
+  </article>
+  <article class="bad">
+    <span>RED</span>
+    <strong>{{ counts.red|default:0 }}</strong>
+    <small>blocking issue</small>
+  </article>
+</section>
+
+<form class="filters" method="get">
+  <label>Search
+    <input name="q" value="{{ filters.q }}" placeholder="Code, title or repository">
+  </label>
+  <label>Book
+    <select name="book">
+      <option value="">All books</option>
+      {% for item in books %}
+      <option value="{{ item }}" {% if filters.book == item|stringformat:'s' %}selected{% endif %}>Book {{ item }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Status
+    <select name="status">
+      <option value="">All statuses</option>
+      <option value="published" {% if filters.status == 'published' %}selected{% endif %}>Published</option>
+      <option value="candidate" {% if filters.status == 'candidate' %}selected{% endif %}>Candidate</option>
+      <option value="planned" {% if filters.status == 'planned' %}selected{% endif %}>Planned</option>
+    </select>
+  </label>
+  <label>Health
+    <select name="health">
+      <option value="">All health</option>
+      <option value="green">Green</option>
+      <option value="amber">Amber</option>
+      <option value="red">Red</option>
+      <option value="grey">Grey</option>
+    </select>
+  </label>
+  <button>Apply filters</button>
+</form>
+
+<section class="table-card">
+  <div class="table-head">
+    <h2>Books 1–9 production units</h2>
+    <span>{{ units|length }} shown</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Health</th>
+          <th>Production unit</th>
+          <th>Book</th>
+          <th>Status</th>
+          <th>Version</th>
+          <th>Evidence</th>
+          <th>Channels</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for unit in units %}
+        <tr>
+          <td><span class="pill {{ unit.health }}">{{ unit.health }}</span></td>
+          <td>
+            <a class="unit-link" href="{% url 'dashboard:unit_detail' unit.code %}">
+              <b>{{ unit.code }}</b><span>{{ unit.title }}</span>
+            </a>
+          </td>
+          <td>{{ unit.book }}</td>
+          <td>{{ unit.operational_status|default:"—" }}</td>
+          <td>{{ unit.current_version|default:"—" }}</td>
+          <td>
+            <span class="check {% if unit.evidence_file_exists and unit.manifest_file_exists %}ok{% endif %}">
+              {% if unit.evidence_file_exists and unit.manifest_file_exists %}Complete{% else %}Incomplete{% endif %}
+            </span>
+          </td>
+          <td class="links">
+            {% if unit.website_url %}<a href="{{ unit.website_url }}" target="_blank">Web</a>{% endif %}
+            {% if unit.release_url %}<a href="{{ unit.release_url }}" target="_blank">Release</a>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="empty">No production units match these filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="headline">
+  <div>
+    <p class="eyebrow">EXECUTIVE PATHWAY</p>
+    <h2>Executive module publication health</h2>
+    <p class="muted">Modules are read from the authoritative ecosystem registry.</p>
+  </div>
+</section>
+
+<section class="metrics">
+  <article>
+    <span>MODULES</span>
+    <strong>{{ modules|length }}</strong>
+    <small>Executive Pathway</small>
+  </article>
+  <article class="good">
+    <span>GREEN</span>
+    <strong>{{ executive_counts.green|default:0 }}</strong>
+    <small>published and accepted</small>
+  </article>
+  <article class="warn">
+    <span>AMBER</span>
+    <strong>{{ executive_counts.amber|default:0 }}</strong>
+    <small>follow-up or review</small>
+  </article>
+  <article class="bad">
+    <span>RED</span>
+    <strong>{{ executive_counts.red|default:0 }}</strong>
+    <small>blocking issue</small>
+  </article>
+</section>
+
+<section class="table-card">
+  <div class="table-head">
+    <h2>Executive Pathway modules</h2>
+    <span>{{ modules|length }} registered</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Health</th>
+          <th>Module</th>
+          <th>Status</th>
+          <th>Version</th>
+          <th>Assets</th>
+          <th>Evidence</th>
+          <th>Channels</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for module in modules %}
+        <tr>
+          <td><span class="pill {{ module.health }}">{{ module.health }}</span></td>
+          <td>
+            <span class="unit-link">
+              <b>{{ module.code }}</b><span>{{ module.title }}</span>
+            </span>
+          </td>
+          <td>{{ module.status|default:"—" }}</td>
+          <td>{{ module.version|default:"—" }}</td>
+          <td>{{ module.asset_boundary }}</td>
+          <td>
+            <span class="check {% if module.evidence_file_exists %}ok{% endif %}">
+              {% if module.evidence_file_exists %}Complete{% else %}Incomplete{% endif %}
+            </span>
+          </td>
+          <td class="links">
+            {% if module.website_url %}<a href="{{ module.website_url }}" target="_blank">Web</a>{% endif %}
+            {% if module.video_url %}<a href="{{ module.video_url }}" target="_blank">Video</a>{% endif %}
+            {% if module.educational_linkedin %}<a href="{{ module.educational_linkedin }}" target="_blank">Post</a>{% endif %}
+            {% if module.executive_linkedin %}<a href="{{ module.executive_linkedin }}" target="_blank">Executive</a>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="empty">No Executive Pathway modules are registered.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

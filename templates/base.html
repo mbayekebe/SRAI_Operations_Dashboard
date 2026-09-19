@@ -1,0 +1,11 @@
+{% load static %}<!doctype html>
+<html lang="en"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SRAI Operations Dashboard{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'dashboard.css' %}">
+</head><body>
+<header class="topbar"><a class="brand" href="{% url 'dashboard:overview' %}"><span>SRAI</span><b>Operations Dashboard</b></a><div class="read-only">READ-ONLY</div></header>
+<main>{% block content %}{% endblock %}</main>
+<footer>Registry source: {{ snapshot.root }} · refreshed on every request</footer>
+</body></html>
