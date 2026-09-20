@@ -199,4 +199,90 @@
     </table>
   </div>
 </section>
+
+<section class="headline">
+  <div>
+    <p class="eyebrow">OFFICIAL STATISTICS &amp; AI</p>
+    <h2>Official Statistics module publication health</h2>
+    <p class="muted">Modules are read from the authoritative ecosystem registry and their publication evidence.</p>
+  </div>
+</section>
+
+<section class="metrics">
+  <article>
+    <span>MODULES</span>
+    <strong>{{ official_modules|length }}</strong>
+    <small>Official Statistics &amp; AI</small>
+  </article>
+  <article class="good">
+    <span>GREEN</span>
+    <strong>{{ official_statistics_counts.green|default:0 }}</strong>
+    <small>published and accepted</small>
+  </article>
+  <article class="warn">
+    <span>AMBER</span>
+    <strong>{{ official_statistics_counts.amber|default:0 }}</strong>
+    <small>follow-up or review</small>
+  </article>
+  <article class="bad">
+    <span>RED</span>
+    <strong>{{ official_statistics_counts.red|default:0 }}</strong>
+    <small>blocking issue</small>
+  </article>
+</section>
+
+<section class="table-card">
+  <div class="table-head">
+    <h2>Official Statistics &amp; AI modules</h2>
+    <span>{{ official_modules|length }} registered</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Health</th>
+          <th>Module</th>
+          <th>Status</th>
+          <th>Version</th>
+          <th>Assets</th>
+          <th>Evidence</th>
+          <th>Channels</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for module in official_modules %}
+        <tr>
+          <td><span class="pill {{ module.health }}">{{ module.health }}</span></td>
+          <td>
+            <span class="unit-link">
+              <b>{{ module.code }}</b><span>{{ module.title }}</span>
+            </span>
+          </td>
+          <td>{{ module.status|default:"—" }}</td>
+          <td>{{ module.version|default:"—" }}</td>
+          <td>
+            {{ module.asset_boundary }}
+            {% if module.published_assets %}<small>{{ module.published_assets }} published assets</small>{% endif %}
+          </td>
+          <td>
+            <span class="check {% if module.evidence_file_exists %}ok{% endif %}">
+              {% if module.evidence_file_exists %}Complete{% else %}Incomplete{% endif %}
+            </span>
+          </td>
+          <td class="links">
+            {% if module.pathway_url %}<a href="{{ module.pathway_url }}" target="_blank">Pathway</a>{% endif %}
+            {% if module.website_url %}<a href="{{ module.website_url }}" target="_blank">Module</a>{% endif %}
+            {% if module.video_url %}<a href="{{ module.video_url }}" target="_blank">Video</a>{% endif %}
+            {% if module.repository_url %}<a href="{{ module.repository_url }}" target="_blank">Repository</a>{% endif %}
+            {% if module.educational_linkedin %}<a href="{{ module.educational_linkedin }}" target="_blank">Post</a>{% endif %}
+            {% if module.executive_linkedin %}<a href="{{ module.executive_linkedin }}" target="_blank">Executive</a>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="empty">No Official Statistics &amp; AI modules are registered.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}
