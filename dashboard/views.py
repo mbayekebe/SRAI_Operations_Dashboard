@@ -40,6 +40,9 @@ def overview(request):
 
     counts = Counter(unit.get("health") for unit in snap.units)
     executive_counts = Counter(module.get("health") for module in snap.modules)
+    official_statistics_counts = Counter(
+        module.get("health") for module in snap.official_modules
+    )
     status_counts = Counter(
         str(unit.get("operational_status", "unknown")).lower()
         for unit in snap.units
@@ -54,8 +57,10 @@ def overview(request):
         "snapshot": snap,
         "units": units,
         "modules": snap.modules,
+        "official_modules": snap.official_modules,
         "counts": counts,
         "executive_counts": executive_counts,
+        "official_statistics_counts": official_statistics_counts,
         "status_counts": status_counts,
         "books": books,
         "filters": {
@@ -103,5 +108,13 @@ def health_json(request):
                 "health": module.get("health"),
             }
             for module in snap.modules
+        ],
+        "official_statistics_modules": [
+            {
+                "code": module.get("code"),
+                "status": module.get("status"),
+                "health": module.get("health"),
+            }
+            for module in snap.official_modules
         ],
     })

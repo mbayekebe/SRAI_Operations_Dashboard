@@ -10,6 +10,7 @@ class Snapshot:
     root: Path
     units: list[dict] = field(default_factory=list)
     modules: list[dict] = field(default_factory=list)
+    official_modules: list[dict] = field(default_factory=list)
     reconciliation: dict = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
@@ -34,6 +35,18 @@ def health_for(unit):
 
 
 def executive_health(record):
+    status = str(record.get("status", "")).lower()
+
+    if any(word in status for word in ("failed", "blocked", "invalid")):
+        return "red"
+    if status in {"publication_closed", "deployed_and_owner_accepted"}:
+        return "green"
+    if status in {"planned", "draft", "not_started"}:
+        return "grey"
+    return "amber"
+
+
+def official_statistics_health(record):
     status = str(record.get("status", "")).lower()
 
     if any(word in status for word in ("failed", "blocked", "invalid")):
@@ -170,6 +183,61 @@ def load_executive_modules(root, snap):
     snap.modules.sort(key=lambda item: item["code"])
 
 
+def load_official_statistics_modules(root, snap):
+    ecosystem_path = root / "REGISTRY" / "ecosystem.json"
+
+    if not ecosystem_path.exists():
+        return
+
+    try:
+        ecosystem = read_json(ecosystem_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        snap.errors.append(f"Official Statistics registry could not be read: {exc}")
+        return
+
+    for key, publication in ecosystem.items():
+        if not (
+            key.startswith("official_statistics_pathway_")
+            and key.endswith("_publication_acceptance")
+            and isinstance(publication, dict)
+        ):
+            continue
+
+        code = str(publication.get("module", ""))
+        if not code.startswith("OS-A"):
+            continue
+
+        evidence_source = publication.get("evidence_source", "")
+        evidence_path = root / evidence_source if evidence_source else None
+
+        snap.official_modules.append({
+            "code": code,
+            "title": publication.get("title", ""),
+            "version": publication.get("version", ""),
+            "status": publication.get("status", "unknown"),
+            "health": official_statistics_health(publication),
+            "website_url": publication.get("website_url"),
+            "pathway_url": publication.get("pathway_url"),
+            "video_url": publication.get("video_url"),
+            "repository_url": publication.get("repository_url"),
+            "release_url": publication.get("release_url"),
+            "educational_linkedin": publication.get(
+                "educational_linkedin_announcement"
+            ),
+            "executive_linkedin": publication.get(
+                "executive_linkedin_announcement"
+            ),
+            "asset_boundary": publication.get("asset_boundary", "Recorded"),
+            "published_assets": publication.get("published_assets"),
+            "evidence_source": evidence_source,
+            "evidence_file_exists": bool(
+                evidence_path and evidence_path.exists()
+            ),
+        })
+
+    snap.official_modules.sort(key=lambda item: item["code"])
+
+
 def load_snapshot(root=None):
     root = Path(root or settings.OPERATIONS_ROOT)
     snap = Snapshot(root=root)
@@ -179,6 +247,7 @@ def load_snapshot(root=None):
     if not registry_path.exists():
         snap.errors.append(f"Registry not found: {registry_path}")
         load_executive_modules(root, snap)
+        load_official_statistics_modules(root, snap)
         return snap
 
     try:
@@ -186,6 +255,7 @@ def load_snapshot(root=None):
     except (OSError, json.JSONDecodeError) as exc:
         snap.errors.append(f"Registry could not be read: {exc}")
         load_executive_modules(root, snap)
+        load_official_statistics_modules(root, snap)
         return snap
 
     units = data.get("production_units")
@@ -193,6 +263,7 @@ def load_snapshot(root=None):
     if not isinstance(units, list):
         snap.errors.append("Registry field 'production_units' must be a list.")
         load_executive_modules(root, snap)
+        load_official_statistics_modules(root, snap)
         return snap
 
     snap.reconciliation = data.get("reconciliation") or {}
@@ -213,6 +284,7 @@ def load_snapshot(root=None):
         snap.units.append(unit)
 
     load_executive_modules(root, snap)
+    load_official_statistics_modules(root, snap)
     return snap
 
 

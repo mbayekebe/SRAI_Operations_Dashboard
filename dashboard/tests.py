@@ -69,6 +69,22 @@ class DashboardTests(TestCase):
                 "public_asset_publication_authorized": True,
                 "evidence_source": "EVIDENCE/SRAI_EP_M03_PUBLICATION_ACCEPTANCE.json",
             },
+            "official_statistics_pathway_os_a01_publication_acceptance": {
+                "module": "OS-A01",
+                "version": "0.1.0-rc3",
+                "title": "The National Information Ecosystem",
+                "status": "publication_closed",
+                "website_url": "https://example.test/official-statistics/modules/a1/",
+                "pathway_url": "https://example.test/official-statistics/",
+                "video_url": "https://youtu.be/example-os-a01",
+                "repository_url": "https://github.com/example/official-statistics",
+                "release_url": "https://github.com/example/official-statistics/tree/os-a01-v0.1.0-rc3",
+                "educational_linkedin_announcement": "https://example.test/os-announcement",
+                "executive_linkedin_announcement": "https://example.test/os-executive",
+                "asset_boundary": "Public",
+                "published_assets": 10,
+                "evidence_source": "EVIDENCE/SRAI_OS_A01_PUBLICATION_ACCEPTANCE.json",
+            },
         }
 
         (self.root / "REGISTRY" / "production_units.json").write_text(
@@ -97,6 +113,10 @@ class DashboardTests(TestCase):
             json.dumps({"status": "PUBLICATION_CLOSED"}),
             encoding="utf-8",
         )
+        (self.root / "EVIDENCE" / "SRAI_OS_A01_PUBLICATION_ACCEPTANCE.json").write_text(
+            json.dumps({"status": "PUBLICATION_CLOSED"}),
+            encoding="utf-8",
+        )
         (self.root / "EXAMPLES" / "PU-B03-C01_LESSON_MANIFEST.json").write_text(
             "{}",
             encoding="utf-8",
@@ -121,6 +141,10 @@ class DashboardTests(TestCase):
         self.assertContains(response, "EP-M03")
         self.assertContains(response, "Deciding When Evidence Is Incomplete")
         self.assertContains(response, "Public")
+        self.assertContains(response, "Official Statistics &amp; AI modules")
+        self.assertContains(response, "OS-A01")
+        self.assertContains(response, "The National Information Ecosystem")
+        self.assertContains(response, "10 published assets")
 
     def test_detail(self):
         response = self.client.get("/unit/PU-B03-C01/")
@@ -140,3 +164,9 @@ class DashboardTests(TestCase):
         self.assertEqual(set(modules), {"EP-M01", "EP-M03"})
         self.assertEqual(modules["EP-M01"]["health"], "green")
         self.assertEqual(modules["EP-M03"]["health"], "green")
+        official_modules = {
+            item["code"]: item
+            for item in response.json()["official_statistics_modules"]
+        }
+        self.assertEqual(set(official_modules), {"OS-A01"})
+        self.assertEqual(official_modules["OS-A01"]["health"], "green")
